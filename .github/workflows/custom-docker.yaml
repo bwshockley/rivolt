@@ -7,7 +7,7 @@ on:
     branches:
       - main
     tags:
-      - "bandit-v*"
+      - "v*"
 
 permissions:
   contents: read
@@ -37,6 +37,6 @@ jobs:
           context: .
           platforms: linux/amd64
           push: true
-          tags: |
-            ghcr.io/bwshockley/rivolt:sha-${{ github.sha }}
-            ghcr.io/bwshockley/rivolt:bandit${{ github.ref_type == 'tag' && format('-{0}', github.ref_name) || '' }}
+        tags: |
+          ghcr.io/bwshockley/rivolt:sha-${{ github.sha }}
+          ghcr.io/bwshockley/rivolt:bandit${{ github.ref_type == 'tag' && format('-{0}', github.ref_name) || '' }}
