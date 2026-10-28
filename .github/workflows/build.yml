@@ -1201,7 +1201,11 @@ jobs:
     needs: [publish, changes, e2e-ok, lint, chart]
     # Only after a successful main image publish (a push, or a manual run on
     # main) — tag pushes go to prod manually, not via this auto-bump.
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+    if: >-
+      github.repository == 'apohor/rivolt' &&
+      (github.event_name == 'push' ||
+       github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # No job-level concurrency: a pending job superseded in a concurrency
