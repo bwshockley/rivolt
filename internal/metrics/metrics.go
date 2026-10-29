@@ -49,6 +49,11 @@ type Metrics struct {
 	// Subscription leases owned by this pod. The lease layer
 	// increments/decrements as it claims and releases.
 	SubscriptionLeases prometheus.Gauge
+	// LeaseGroupsOwned is the number of user-group leases this pod holds (M1 of
+	// the single-owner design); LeaseFenceWouldReject counts group tokens that
+	// rivolt_lease_ok would have refused, with nothing acting on it yet.
+	LeaseGroupsOwned      prometheus.Gauge
+	LeaseFenceWouldReject *prometheus.CounterVec
 	// LeaseUnstreamed counts episodes of a lease this pod holds without
 	// a subscription behind it (the coordinator re-subscribes; alert on
 	// any increase).
@@ -271,6 +276,19 @@ func New() *Metrics {
 				Name: "rivolt_subscription_leases",
 				Help: "Rivian websocket subscription leases currently owned by this pod.",
 			},
+		),
+		LeaseGroupsOwned: prometheus.NewGauge(
+			prometheus.GaugeOpts{
+				Name: "rivolt_lease_groups_owned",
+				Help: "User-group leases (account_leases) currently held by this pod.",
+			},
+		),
+		LeaseFenceWouldReject: prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "rivolt_lease_fence_would_reject_total",
+				Help: "Group lease tokens held by this pod that the fence check would have refused (dry run: nothing is refused yet). source is db (rivolt_lease_ok) or local (renewals failing past the local deadline).",
+			},
+			[]string{"kind", "source"},
 		),
 		LeaseUnstreamed: prometheus.NewCounter(
 			prometheus.CounterOpts{
@@ -520,6 +538,8 @@ func New() *Metrics {
 		m.HTTPRequestDuration,
 		m.RivianResultsTotal,
 		m.SubscriptionLeases,
+		m.LeaseGroupsOwned,
+		m.LeaseFenceWouldReject,
 		m.LeaseUnstreamed,
 		m.ReauthRaiseDeferred,
 		m.RivianAccountMismatch,

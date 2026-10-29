@@ -2,6 +2,7 @@ package secrets
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -69,13 +70,34 @@ func SaveRivianSession(ctx context.Context, s *Store, userID uuid.UUID, sess riv
 		return nil
 	}
 	if sess.UserSessionToken == "" {
-		return s.Delete(ctx, userID, rivianSessionName)
+		return s.DeleteTx(ctx, userID, rivianSessionName, func(ctx context.Context, tx *sql.Tx) error {
+			return setSignedIn(ctx, tx, userID, time.Time{})
+		})
 	}
 	buf, err := json.Marshal(sess)
 	if err != nil {
 		return fmt.Errorf("marshal rivian session: %w", err)
 	}
-	return s.Put(ctx, userID, rivianSessionName, buf)
+	return s.PutTx(ctx, userID, rivianSessionName, buf, func(ctx context.Context, tx *sql.Tx) error {
+		return setSignedIn(ctx, tx, userID, sess.AuthenticatedAt)
+	})
+}
+
+// RivianSignedInUnknown is what users.rivian_signed_in_at holds for a stored session that has
+// no sign-in time (1970-01-01): recorded, so the expiry sweep does not open it again.
+var RivianSignedInUnknown = time.Unix(0, 0).UTC()
+
+// setSignedIn records the sign-in time beside the session, in the session's transaction. A zero
+// time clears it (sign-out, or a session with no time: the expiry sweep fills the column once).
+func setSignedIn(ctx context.Context, tx *sql.Tx, userID uuid.UUID, at time.Time) error {
+	var v any
+	if !at.IsZero() {
+		v = at.UTC()
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE users SET rivian_signed_in_at = $2 WHERE id = $1`, userID, v); err != nil {
+		return fmt.Errorf("record rivian sign-in time: %w", err)
+	}
+	return nil
 }
 
 // SavePendingMFA persists an in-flight OTP challenge so a peer pod can
@@ -124,46 +146,4 @@ func ClearPendingMFA(ctx context.Context, s *Store, userID uuid.UUID) error {
 		return nil
 	}
 	return s.Delete(ctx, userID, rivianPendingMFAName)
-}
-
-// legacySessionFields are the two Rivian tokens older versions kept in the stored session
-// (the access and refresh token Rivian's Login used to return). Nothing ever used them, and the
-// current Login does not request them; a stored session written before that still holds them.
-var legacySessionFields = []string{"access_token", "refresh_token"}
-
-// ScrubLegacyRivianTokens removes the legacy access and refresh tokens from a user's stored
-// session, if it still has them, without touching anything else and without changing the row's
-// version (updated_at): it re-seals the same session minus those two fields, and only if nobody
-// wrote the row since it was read, so a sign-in on another pod in between is never overwritten.
-// scrubbed is false when there was nothing to remove or the row changed meanwhile.
-func ScrubLegacyRivianTokens(ctx context.Context, s *Store, userID uuid.UUID) (scrubbed bool, err error) {
-	if s == nil {
-		return false, nil
-	}
-	plaintext, at, err := s.GetVersioned(ctx, userID, rivianSessionName)
-	if errors.Is(err, ErrNotFound) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	var fields map[string]json.RawMessage
-	if err := json.Unmarshal(plaintext, &fields); err != nil {
-		return false, nil // not ours to repair: LoadRivianSession treats it as empty
-	}
-	found := false
-	for _, k := range legacySessionFields {
-		if _, ok := fields[k]; ok {
-			delete(fields, k)
-			found = true
-		}
-	}
-	if !found {
-		return false, nil
-	}
-	clean, err := json.Marshal(fields)
-	if err != nil {
-		return false, fmt.Errorf("marshal rivian session: %w", err)
-	}
-	return s.ReplaceIfUnchanged(ctx, userID, rivianSessionName, clean, at)
 }
