@@ -241,7 +241,7 @@ export default function ChargeDetailPage() {
   if (charges.isLoading) {
     return (
       <div>
-        <PageHeader title="Charge" />
+        <PageHeader title="Charge" framed />
         <Spinner />
       </div>
     );
@@ -249,7 +249,7 @@ export default function ChargeDetailPage() {
   if (!charge) {
     return (
       <div>
-        <PageHeader title="Charge not found" />
+        <PageHeader title="Charge not found" framed />
         <Card>
           <p className="text-sm text-neutral-400">
             That charge ID doesn't exist in this dataset.{" "}
@@ -350,6 +350,7 @@ export default function ChargeDetailPage() {
         // The shared label up top (lib/chargePlace), as on Activity:
         // Home / Away / Fast charge; the Session card has the distance.
         title={headerTitle(charge)}
+        framed
         subtitle={
           active
             ? `${formatDateTime(charge.StartedAt)} · charging now`
