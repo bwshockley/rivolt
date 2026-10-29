@@ -186,7 +186,7 @@ function SettingsPageInner() {
 
   return (
     <div ref={rootRef} className="space-y-4">
-      <PageHeader title="Settings" />
+      <PageHeader title="Settings" framed />
 
       <div className="flex flex-wrap gap-1 border-b border-neutral-800 overflow-x-auto">
         {TABS.map((t) => (

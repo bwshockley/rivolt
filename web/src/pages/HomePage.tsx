@@ -254,6 +254,7 @@ export default function HomePage() {
       {historyEmpty && <ElectraFiImportHint />}
       <PageHeader
         title="Now"
+        framed
         actions={
           <ScopeBar
             win={win}

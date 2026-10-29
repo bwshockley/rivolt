@@ -29,7 +29,7 @@ export default function AdminPage() {
   if (!me.data || me.data.role !== "admin") {
     return (
       <div className="space-y-4">
-        <PageHeader title="Admin" />
+        <PageHeader title="Admin" framed />
         <Card title="Not authorized">
           <p className="text-sm text-neutral-400">
             This page is only available to administrators.
@@ -40,7 +40,7 @@ export default function AdminPage() {
   }
   return (
     <div className="space-y-4">
-      <PageHeader title="Admin" />
+      <PageHeader title="Admin" framed />
       <AdminTabs currentUserID={me.data.user_id} />
     </div>
   );

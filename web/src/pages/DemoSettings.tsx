@@ -53,7 +53,7 @@ export default function DemoSettings() {
   const c = charging.data;
   return (
     <div className="space-y-4">
-      <PageHeader title="Settings" subtitle="Sample truck, read-only" />
+      <PageHeader title="Settings" subtitle="Sample truck, read-only" framed />
 
       <AppearanceCard />
 

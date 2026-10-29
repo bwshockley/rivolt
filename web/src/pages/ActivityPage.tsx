@@ -138,6 +138,7 @@ export default function ActivityPage() {
       <PageHeader
         title="Activity"
         subtitle="Drives and charges, newest first"
+        framed
         // The table pages are signed-in only: no links to them in the demo.
         actions={
 <PeriodPicker value={period} onChange={(p) => { setPeriod(p); setShown(PAGE); }} />
@@ -305,6 +306,7 @@ function DriveCard({ item }: { item: DriveItem }) {
   const d = item.drive;
   const title = item.from || item.to ? `${item.from ?? "Away"} → ${item.to ?? "Away"}` : "Drive";
   const missing = driveMissingEnergy(d);
+  const efficiency = d.DistanceMi > 0 && d.EnergyUsedKWh > 0 ? d.DistanceMi / d.EnergyUsedKWh : null;
   const dur = d.DrivingSeconds && d.DrivingSeconds > 0 ? d.DrivingSeconds : durationSeconds(d.StartedAt, d.EndedAt);
   return (
     <Link to={detailPath("drives", d.ID)} className={CARD}>
@@ -328,6 +330,11 @@ function DriveCard({ item }: { item: DriveItem }) {
           <span>{d.EnergyUsedKWh.toFixed(1)} kWh</span>
         )}
       </div>
+      {efficiency != null && (
+        <div className="mt-1 text-right text-xs tabular-nums text-neutral-400">
+          {efficiency.toFixed(1)} mi/kWh
+        </div>
+      )}
     </Link>
   );
 }
@@ -366,6 +373,11 @@ function ChargeCard({ item, homeRate }: { item: ChargeItem; homeRate: number | n
           {cost.text}
         </span>
       </div>
+      {c.AvgPowerKW > 0 && (
+        <div className="mt-1 text-right text-xs tabular-nums text-neutral-400">
+          Avg {c.AvgPowerKW.toFixed(1)} kW
+        </div>
+      )}
     </Link>
   );
 }

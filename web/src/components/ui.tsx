@@ -81,13 +81,15 @@ export function PageHeader({
   title,
   subtitle,
   actions,
+  framed = false,
 }: {
   title: string;
   subtitle?: string;
   actions?: ReactNode;
+  framed?: boolean;
 }) {
   return (
-    <div data-span="full" data-ui-header className="mb-6 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+    <div data-span="full" data-ui-header data-ui-header-framed={framed ? "" : undefined} className="mb-6 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
       <div className="min-w-0">
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-neutral-400">{subtitle}</p>}
