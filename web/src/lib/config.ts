@@ -20,10 +20,8 @@ import { useEffect, useState } from "react";
 import { inDemo } from "./demo";
 export type RuntimeConfig = {
   tiles: {
-    // url is the same-origin URL of the served .pmtiles bundle.
-    // protomaps-leaflet pulls tiles out of it via HTTP byte-range
-    // reads. Empty means no self-hosted tile server is wired: maps
-    // show a "tiles unavailable" notice on a plain background.
+    // url is the same-origin URL of the served .pmtiles bundle, used
+    // for fallback OSM POI lookups when the chargers archive is absent.
     url: string;
     // chargersUrl is the same-origin URL of the chargers POI
     // .pmtiles archive (built from Geofabrik North America data
@@ -209,15 +207,9 @@ export function valhallaBase(): string {
 }
 
 // tilesPMTilesURL returns the same-origin URL of the .pmtiles
-// bundle, or "" when no self-hosted tile server is wired. The
-// caller picks a basemap based on this: non-empty switches the
-// drive map to a vector basemap via protomaps-leaflet; empty keeps
-// the "tiles unavailable" notice.
+// bundle used for fallback POI lookups, or "" when the archive is
+// not wired. Leaflet basemaps use OSM raster tiles independently.
 export function tilesPMTilesURL(): string {
-  // The demo uses the same self-hosted basemap archive as the signed-in
-  // app (the server allows the basemap for the demo). CARTO's public
-  // raster needs an API key now and renders placeholder tiles, so it is
-  // not a fallback for the demo.
   return cached.tiles.url;
 }
 

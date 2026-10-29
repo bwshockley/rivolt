@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { backend } from "../lib/api";
-import { inDemo } from "../lib/demo";
 
 export function Footer() {
   const health = useQuery({
@@ -43,36 +42,6 @@ export function Footer() {
         <Link to="/support" className="hover:text-neutral-200">
           Support
         </Link>
-        {!inDemo() && (
-          <>
-            <span className="text-neutral-700">·</span>
-            <Link to="/lease-calculator" className="hover:text-neutral-200">
-              Lease calculator
-            </Link>
-            <span className="text-neutral-700">·</span>
-            <Link to="/charging-cost" className="hover:text-neutral-200">
-              Cost to charge
-            </Link>
-            <span className="text-neutral-700">·</span>
-            <Link to="/changelog" className="hover:text-neutral-200">
-              What's new
-            </Link>
-            <span className="text-neutral-700">·</span>
-            {/* A full page load: the server puts the trip's data in the page. */}
-            <a href="/sample-trips" className="hover:text-neutral-200">
-              Sample trips
-            </a>
-          </>
-        )}
-        <span className="text-neutral-700">·</span>
-        <a
-          href="https://discord.gg/FGty2xmdeV"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-neutral-200"
-        >
-          Discord
-        </a>
         {health.data?.version && (() => {
           // Three CI-stamped shapes:
           //   vX.Y.Z-dev.N+sha-<hex> → preview / main builds (link to commit)
@@ -84,6 +53,7 @@ export function Footer() {
             ? `https://github.com/apohor/rivolt/commit/${shaMatch[1]}`
             : `https://github.com/apohor/rivolt/releases/tag/v${v}`;
           const label = v.startsWith("v") ? v : `v${v}`;
+          if (label.trim().toLowerCase() === "vdev") return null;
           const title = shaMatch ? "Open commit on GitHub" : "What changed in this release";
           return (
             <>

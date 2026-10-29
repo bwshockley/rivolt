@@ -58,8 +58,8 @@
     padding-bottom: max(env(safe-area-inset-bottom), 0px);
   }
 
-  /* Leaflet theming. We ship Carto's dark_all tiles so we just need to
-   match the map background and tone down the attribution bar. */
+    /* Leaflet uses OSM raster tiles; theme filters and the map background
+      are applied by lib/osmTiles.ts. */
   .leaflet-container {
     background: #0a0a0a;
   }

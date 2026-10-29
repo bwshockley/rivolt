@@ -2,12 +2,15 @@ import { useCountUp } from "../lib/uiNext";
 
 // ArcGauge: battery as a 240-degree arc with an animated fill. Used only by
 // the app. The glow is reserved for live states.
+const DEFAULT_STROKE_WIDTH = 7;
+
 export function ArcGauge({
   value,
   label,
   live = false,
   tone = "ok",
   size = 132,
+  strokeWidth = DEFAULT_STROKE_WIDTH,
   limit = null,
   children,
 }: {
@@ -16,6 +19,7 @@ export function ArcGauge({
   live?: boolean;
   tone?: "ok" | "critical" | "idle";
   size?: number;
+  strokeWidth?: number;
   // Charge limit (0..100): drawn as a tick on the arc.
   limit?: number | null;
   // Rendered in the centre; receives the animated value.
@@ -33,6 +37,13 @@ export function ArcGauge({
   const [x1, y1] = pt(start + sweep);
   const arc = `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r} ${r} 0 1 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
   const len = (Math.PI * r * sweep) / 180;
+  const limitPct = limit != null && limit > 0 && limit <= 100 ? limit : null;
+  const limitArc = limitPct != null && limitPct > shown ? (() => {
+    const segmentSweep = (sweep * (limitPct - shown)) / 100;
+    const [sx, sy] = pt(start + (sweep * shown) / 100);
+    const [ex, ey] = pt(start + (sweep * limitPct) / 100);
+    return `M ${sx.toFixed(2)} ${sy.toFixed(2)} A ${r} ${r} 0 ${segmentSweep > 180 ? 1 : 0} 1 ${ex.toFixed(2)} ${ey.toFixed(2)}`;
+  })() : null;
   const stroke = tone === "critical" ? "url(#ag-crit)" : tone === "idle" ? "url(#ag-idle)" : "url(#ag-ok)";
   return (
     <div className="ui-gauge relative shrink-0" style={{ width: size, height: size * 0.9 }} data-live={live ? "true" : undefined}>
@@ -50,10 +61,29 @@ export function ArcGauge({
             <stop offset="0%" stopColor="oklch(62% 0.02 260)" />
             <stop offset="100%" stopColor="oklch(55% 0.02 260)" />
           </linearGradient>
+          <pattern id="ag-limit-hatch" width="6" height="6" patternUnits="userSpaceOnUse">
+            <path d="M -1 1 L 1 -1 M 0 6 L 6 0 M 5 7 L 7 5" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-neutral-300" />
+          </pattern>
         </defs>
-        <path d={arc} fill="none" stroke="currentColor" strokeOpacity={0.14} strokeWidth={7} strokeLinecap="round" className="text-neutral-300" />
-        {limit != null && limit > 0 && limit <= 100 && (() => {
-          const a = ((start + (sweep * limit) / 100) * Math.PI) / 180;
+        <path d={arc} fill="none" stroke="currentColor" strokeOpacity={0.14} strokeWidth={strokeWidth} strokeLinecap="round" className="text-neutral-300" />
+        <path
+          d={arc}
+          fill="none"
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeDasharray={`${len} ${len}`}
+          strokeDashoffset={len * (1 - shown / 100)}
+          className="ui-gauge-fill"
+        />
+        {limitArc && (
+          <>
+            <path d={limitArc} fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="butt" className="text-neutral-600" />
+            <path d={limitArc} fill="none" stroke="url(#ag-limit-hatch)" strokeWidth={strokeWidth} strokeLinecap="butt" />
+          </>
+        )}
+        {limitPct != null && (() => {
+          const a = ((start + (sweep * limitPct) / 100) * Math.PI) / 180;
           const x1 = cx + (r - 8) * Math.cos(a);
           const y1 = cy + (r - 8) * Math.sin(a);
           const x2 = cx + (r + 7) * Math.cos(a);
@@ -66,22 +96,12 @@ export function ArcGauge({
               x2={x2.toFixed(2)}
               y2={y2.toFixed(2)}
               stroke="currentColor"
-              strokeWidth={2}
+              strokeWidth={2.5}
               strokeLinecap="round"
               className="text-neutral-100"
             />
           );
         })()}
-        <path
-          d={arc}
-          fill="none"
-          stroke={stroke}
-          strokeWidth={7}
-          strokeLinecap="round"
-          strokeDasharray={`${len} ${len}`}
-          strokeDashoffset={len * (1 - shown / 100)}
-          className="ui-gauge-fill"
-        />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center pt-1">{children?.(shown)}</div>
     </div>

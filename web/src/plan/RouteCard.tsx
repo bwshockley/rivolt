@@ -16,9 +16,8 @@ import { StopPriceNote, stopCostOrDash } from "./StopPrice";
 import { estimateLabel, fmtRange, spendView } from "../lib/planCost";
 import { Stat } from "./Stat";
 
-// Lazy-load TripRouteMap so the Leaflet + Protomaps + protomaps-leaflet
-// bundle (several hundred KB) only ships when the user actually opens
-// a plan with a rendered map, not on every page navigation.
+// Lazy-load TripRouteMap so Leaflet only ships when the user opens a
+// plan with a rendered map, not on every page navigation.
 const TripRouteMap = lazy(() =>
   import("../components/TripRouteMap").then((m) => ({ default: m.TripRouteMap })),
 );

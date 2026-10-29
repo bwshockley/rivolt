@@ -277,7 +277,7 @@ export const SCALAR: Record<string, { value: number | string; file: string; css:
   "motion.ms": { value: 200, file: "src/index.css", css: "box-shadow 200ms ease-out", use: "state transitions (ms, ease-out); none with Reduce Motion" },
   "gauge.sweep": { value: 240, file: "src/components/ArcGauge.tsx", css: "const sweep = 240", use: "arc sweep (degrees), starting at 150° clockwise from 3 o'clock" },
   "gauge.radius": { value: 52, file: "src/components/ArcGauge.tsx", css: "const r = 52", use: "arc radius in a 120×108 viewBox" },
-  "gauge.stroke": { value: 7, file: "src/components/ArcGauge.tsx", css: "strokeWidth={7}", use: "track and fill width, round caps" },
+  "gauge.stroke": { value: 7, file: "src/components/ArcGauge.tsx", css: "const DEFAULT_STROKE_WIDTH = 7", use: "track and fill width, round caps" },
   "gauge.trackOpacity": { value: 0.14, file: "src/components/ArcGauge.tsx", css: "strokeOpacity={0.14}", use: "track = textBody at this opacity" },
   "gauge.size": { value: 132, file: "src/components/ArcGauge.tsx", css: "size = 132", use: "default width (pt); height = 0.9 × width" },
   "logo.size": { value: 22, file: "src/layout/AppLayout.tsx", css: '<Logo size={22} className="text-emerald-400" />', use: "header logo size (pt), coloured roles.brandMark" },
