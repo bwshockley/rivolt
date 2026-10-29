@@ -434,7 +434,7 @@ function Section({
 function StatusPill({ state }: { state: VehicleState }) {
   const charging = state.charger_power_kw > 0;
   const moving = state.gear && state.gear !== "P";
-  const label = charging ? "charging" : moving ? "driving" : "parked";
+  const label = charging ? "Charging" : moving ? "Driving" : "Parked";
   const tone = charging
     ? "bg-emerald-500/15 text-emerald-300"
     : moving
@@ -522,14 +522,14 @@ function ChargingDetail({
   const cs = state.charger_state || "";
   const isActiveState = cs === "charging_active" || state.charger_power_kw > 0;
   const kind = ls?.is_rivian_charger
-    ? "Rivian charger"
+    ? "Rivian Charger"
     : isActiveState
       ? "Home / AC"
       : cs === "charging_ready"
-        ? "ready · plugged in"
+        ? "Ready · Plugged In"
         : cs === "charging_complete"
-          ? "complete"
-          : "idle";
+          ? "Complete"
+          : "Idle";
 
   // True when Rivian's live feed gave us nothing useful — typical for
   // home AC / L1 / L2 sessions. We still render the panel (user IS
@@ -613,7 +613,7 @@ function ChargingDetail({
                 : ls && ls.estimated_cost && ls.estimated_cost > 0
                   ? `~${formatPrice(ls.estimated_cost.toFixed(2), ls.estimated_currency || "")}`
                   : ls?.is_free_session
-                    ? "free"
+                    ? "Free"
                     : "—"
             }
           />
@@ -680,7 +680,7 @@ function ParkedSummary({
     <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 p-3">
       <div className="mb-2 flex items-center justify-between">
         <div className="text-[11px] uppercase tracking-wide text-neutral-400">
-          {plugged ? "Parked · plugged in" : "Parked"}
+          {plugged ? "Parked · Plugged In" : "Parked"}
         </div>
         <div className="text-[11px] text-neutral-500">
           {/*
@@ -692,8 +692,8 @@ function ParkedSummary({
             phantom "ready".
           */}
           {plugged
-            ? formatChargerState(state.charger_state) || "idle"
-            : formatPower(state.power_state).toLowerCase()}
+            ? formatChargerState(state.charger_state)
+            : formatPower(state.power_state)}
         </div>
       </div>
       <div className="mb-3 flex items-baseline gap-4">
@@ -816,7 +816,7 @@ function DrivingDetail({
     return (
       <div className="rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-[11px] text-neutral-400">
         <span className="font-medium text-blue-300">
-          {state.gear || "driving"}
+          {formatGear(state.gear)}
         </span>
         {" · "}waiting for first frame…
       </div>
@@ -829,7 +829,7 @@ function DrivingDetail({
           Drive in progress
         </div>
         <div className="text-[11px] text-neutral-500">
-          #{d.number} · {state.gear || "—"}
+          #{d.number} · {formatGear(state.gear)}
         </div>
       </div>
       <div className="mb-3 flex items-baseline gap-4">
@@ -998,28 +998,28 @@ function Field({ label, value }: { label: string; value: string }) {
 // ---------- formatters ----------
 
 function formatChargerState(s: string): string {
-  switch (s) {
+  switch (s.trim().toLowerCase()) {
     case "charger_disconnected":
-      return "disconnected";
+      return "Disconnected";
     case "charger_connected":
-      return "connected";
+      return "Connected";
     case "charging_active":
-      return "active";
+      return "Active";
     case "charging_complete":
-      return "complete";
+      return "Complete";
     case "charging_ready":
-      return "ready";
+      return "Ready";
     default:
-      return s || "—";
+      return formatTitle(s);
   }
 }
 
 function formatChargerStatus(s: string): string {
-  switch (s) {
+  switch (s.trim().toLowerCase()) {
     case "chrgr_sts_not_connected":
-      return "unplugged";
+      return "Unplugged";
     case "chrgr_sts_connected_charging":
-      return "charging";
+      return "Charging";
     // "connected_no_power" (cable in, no draw — e.g. paused session,
     // complete session, or an AC charger that hasn't handshaken yet)
     // and the older "connected_no_chrg" variant both render as a
@@ -1029,21 +1029,21 @@ function formatChargerStatus(s: string): string {
     // kind of jargon the Rivian app hides.
     case "chrgr_sts_connected_no_power":
     case "chrgr_sts_connected_no_chrg":
-      return "connected";
+      return "Connected";
     case "":
       return "—";
     default:
-      return s.replace(/^chrgr_sts_/, "").replace(/_/g, " ");
+      return formatTitle(s.trim().replace(/^chrgr_sts_/i, ""));
   }
 }
 
 function formatOpenClosed(s: string): string {
   if (!s) return "—";
-  return s.toLowerCase() === "open" ? "open" : "closed";
+  return s.trim().toLowerCase() === "open" ? "Open" : "Closed";
 }
 
 function formatClosed(closed: boolean): string {
-  return closed ? "closed" : "open";
+  return closed ? "Closed" : "Open";
 }
 
 // formatWindow mirrors HA's bretterer/home-assistant-rivian
@@ -1060,7 +1060,7 @@ function formatWindow(v: string): string {
 }
 
 function formatYesNo(v: boolean): string {
-  return v ? "yes" : "no";
+  return v ? "Yes" : "No";
 }
 
 // chargingFieldsVisible decides whether to surface the
@@ -1100,22 +1100,27 @@ function isTruthyFlag(s: string): boolean {
 
 function formatBoolish(s: string): string {
   if (!s) return "—";
-  const v = s.toLowerCase();
-  if (v === "true" || v === "on" || v === "active" || v === "1") return "yes";
-  if (v === "false" || v === "off" || v === "inactive" || v === "0") return "no";
+  const v = s.trim().toLowerCase();
+  if (v === "on") return "On";
+  if (v === "off") return "Off";
+  if (v === "active") return "Active";
+  if (v === "inactive") return "Inactive";
+  if (v === "true" || v === "1") return "Yes";
+  if (v === "false" || v === "0") return "No";
   return formatTitle(s);
 }
 
 function formatTitle(s: string): string {
-  if (!s) return "—";
+  const trimmed = s.trim();
+  if (!trimmed) return "—";
   // Rivian publishes "undefined" / "unknown" literals for fields the
   // car hasn't reported yet (OTA status on a brand-new vehicle,
   // wiper-fluid telemetry during cold boot, etc.). Title-casing them
   // produces a misleading "Undefined" label that reads like an app
   // bug. Collapse both to a plain em-dash so the grid stays tidy.
-  const v = s.toLowerCase();
+  const v = trimmed.toLowerCase();
   if (v === "undefined" || v === "unknown") return "—";
-  return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return v.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 // formatGear expands the single-letter gear code into the
@@ -1131,7 +1136,7 @@ function formatGear(g: string): string {
     N: "Neutral",
   };
   if (!g) return "—";
-  return map[g.toUpperCase()] ?? g;
+  return map[g.toUpperCase()] ?? formatTitle(g);
 }
 
 // formatOtaAvailable renders the pending-update slot. Rivian reports
@@ -1140,8 +1145,8 @@ function formatGear(g: string): string {
 // version label. Treat both as "no update", and only echo the real
 // version back when it differs from the installed one.
 function formatOtaAvailable(available: string, current: string): string {
-  if (!available || available === "0.0.0") return "no";
-  if (available === current) return "up-to-date";
+  if (!available || available === "0.0.0") return "No";
+  if (available === current) return "Up-to-date";
   return available;
 }
 
@@ -1158,18 +1163,18 @@ function formatOtaAvailable(available: string, current: string): string {
 // idle / unknown values to an em-dash and humanize the rest.
 function formatPrecondition(s: string): string {
   if (!s) return "—";
-  const v = s.toLowerCase();
+  const v = s.trim().toLowerCase();
   if (v === "undefined" || v === "unknown" || v === "not_preconditioning") {
-    return "off";
+    return "Off";
   }
-  if (v === "preconditioning") return "on";
-  if (v === "preconditioned") return "ready";
+  if (v === "preconditioning") return "On";
+  if (v === "preconditioned") return "Ready";
   return formatTitle(s);
 }
 
 function formatTwelveVolt(s: string): string {
   if (!s) return "—";
-  const v = s.toLowerCase();
+  const v = s.trim().toLowerCase();
   if (v === "normal_operation" || v === "normal") return "Normal";
   if (v === "low_battery" || v === "low") return "Low";
   if (v === "critical_battery" || v === "critical") return "Critical";
@@ -1190,11 +1195,11 @@ function formatDriveMode(s: string): string {
     off_road_sport_auto: "Rally",
     off_road_sport_drift: "Drift",
   };
-  return map[s] ?? formatTitle(s);
+  return map[s.trim().toLowerCase()] ?? formatTitle(s);
 }
 
 function formatPower(s: string): string {
-  switch (s) {
+  switch (s.trim().toLowerCase()) {
     case "":
       return "—";
     case "go":
@@ -1222,6 +1227,6 @@ function formatHeading(deg: number): string {
 function formatTire(bar: number, status: string): string {
   if (!bar) return formatTitle(status);
   const psi = barToPsi(bar);
-  const st = status && status.toLowerCase() !== "normal" ? ` · ${status}` : "";
+  const st = status && status.trim().toLowerCase() !== "normal" ? ` · ${formatTitle(status)}` : "";
   return `${psi.toFixed(0)} psi${st}`;
 }

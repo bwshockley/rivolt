@@ -49,6 +49,7 @@ export default function DrivesPage() {
       <ConnectRivianPrompt context="Once connected, drives appear here automatically." />
       <PageHeader
         title="Drives"
+        framed
         subtitle={
           q.data
             ? `${rows.length} of ${q.data.length} drive sessions`

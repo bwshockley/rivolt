@@ -58,8 +58,8 @@
     padding-bottom: max(env(safe-area-inset-bottom), 0px);
   }
 
-  /* Leaflet theming. We ship Carto's dark_all tiles so we just need to
-   match the map background and tone down the attribution bar. */
+    /* Leaflet uses OSM raster tiles; theme filters and the map background
+      are applied by lib/osmTiles.ts. */
   .leaflet-container {
     background: #0a0a0a;
   }
@@ -555,8 +555,7 @@ html[data-theme='light'] {
 /* ---- Activity and Money ------------------------------------ */
 
 /* Activity: a timeline rail with a glowing node per row (drive sky, charge
-   emerald, fast charge amber), day headers with a fading rule, and on
-   desktop two columns of days. */
+  emerald, fast charge amber), day headers with a fading rule, in one column. */
 :root [data-ui-feed] > section > h2 {
   display: flex;
   align-items: center;
@@ -602,20 +601,6 @@ html[data-theme='light'] {
   background: var(--node);
   box-shadow: 0 0 0 3px oklch(13.5% 0.009 262), 0 0 10px 1px var(--node);
 }
-@media (min-width: 1024px) {
-  :root [data-ui-feed] {
-    columns: 2;
-    column-gap: 2rem;
-  }
-  :root [data-ui-feed] > section {
-    break-inside: avoid;
-    margin: 0 0 1.25rem;
-  }
-  :root [data-ui-feed] > * + * {
-    margin-top: 0;
-  }
-}
-
 /* Money: a big statement numeral under a light pool; on desktop the statement
    and the energy split sit left, the receipts right. */
 :root:not([data-theme='light']) [data-ui-area='m-hero'] {
@@ -831,6 +816,16 @@ html[data-theme='light'] {
   }
   :root [data-ui-header] p {
     display: none;
+  }
+}
+:root [data-ui-header][data-ui-header-framed] {
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--color-neutral-800);
+  border-radius: 0.75rem;
+}
+@media (max-width: 767.98px) {
+  :root [data-ui-header][data-ui-header-framed] {
+    padding: 0.4rem 0.75rem;
   }
 }
 /* Bars: fully solid (alpha 1), nothing reads through behind the tab bar. The

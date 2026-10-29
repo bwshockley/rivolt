@@ -118,6 +118,7 @@ export default function MoneyPage() {
       <PageHeader
         title="Money"
         subtitle="What charging actually cost"
+        framed
         actions={
           <div className="flex items-center gap-2">
             <VehiclePicker vehicles={vehicles.data ?? []} selectedID={selectedID} onChange={select} />

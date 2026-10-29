@@ -8,8 +8,7 @@ import { Link, useParams } from "react-router-dom";
 import { forVehicle } from "../lib/vehicleSamples";
 import { backend, ApiError, type DriveWeatherSeries, type Sample, DETAIL_SAMPLE_LIMIT } from "../lib/api";
 import { Card, ErrorBox, PageHeader, Spinner } from "../components/ui";
-// Lazy-load DriveMap so the Leaflet + Protomaps bundle only ships
-// when a drive is actually opened.
+// Lazy-load DriveMap so Leaflet only ships when a drive is actually opened.
 const DriveMap = lazy(() =>
   import("../components/DriveMap").then((m) => ({ default: m.DriveMap })),
 );
@@ -341,7 +340,7 @@ export default function DriveDetailPage() {
   if (drives.isLoading) {
     return (
       <div>
-        <PageHeader title="Drive" />
+        <PageHeader title="Drive" framed />
         <Spinner />
       </div>
     );
@@ -349,7 +348,7 @@ export default function DriveDetailPage() {
   if (!drive) {
     return (
       <div>
-        <PageHeader title="Drive not found" />
+        <PageHeader title="Drive not found" framed />
         <Card>
           <p className="text-sm text-neutral-400">
             That drive ID doesn't exist in this dataset.{" "}
@@ -431,6 +430,7 @@ export default function DriveDetailPage() {
       <PageHeader
         title="Drive"
         subtitle={`${formatDateTime(drive.StartedAt)} → ${formatDateTime(drive.EndedAt)}`}
+        framed
         actions={
           <span className="flex items-center gap-4">
             <ShareTripButton drive={drive} />

@@ -290,6 +290,7 @@ export default function NowCard({
               label={view.soc > 0 ? `Battery ${Math.round(view.soc)} percent` : "Battery level unknown"}
               live={view.kind === "charging"}
               tone={offline ? "idle" : critical ? "critical" : "ok"}
+              strokeWidth={8.75}
               limit={view.kind === "charging" || view.kind === "plugged" ? view.limitPct : null}
             >
               {(shown) => (

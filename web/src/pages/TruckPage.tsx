@@ -93,7 +93,7 @@ export default function TruckPage() {
   if (!selectedID) {
     return (
       <div className="space-y-4">
-        <PageHeader title="Truck" subtitle="Health and sleep" />
+        <PageHeader title="Truck" subtitle="Health and sleep" framed />
         <Card>
           <p className="text-sm text-neutral-400">Connect your Rivian to see pack health and sleep here.</p>
         </Card>
@@ -106,6 +106,7 @@ export default function TruckPage() {
       <PageHeader
         title="Truck"
         subtitle={name}
+        framed
         actions={
           <>
             <PeriodPicker value={period} onChange={setPeriod} />

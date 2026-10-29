@@ -74,6 +74,7 @@ export default function ChargesPage() {
       <ConnectRivianPrompt context="Once connected, charging sessions appear here automatically." />
       <PageHeader
         title="Charges"
+        framed
         subtitle={
           q.data
             ? `${rows.length} of ${q.data.length} charging sessions`

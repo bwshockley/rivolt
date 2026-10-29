@@ -24,7 +24,6 @@
     "leaflet": "^1.9.4",
     "pbf": "^5.0.0",
     "pmtiles": "^4.0.0",
-    "protomaps-leaflet": "^5.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",

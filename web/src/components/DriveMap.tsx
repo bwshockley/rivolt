@@ -12,17 +12,14 @@ import { displayTimeZone } from "../lib/format";
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import { safeFitBounds } from "../lib/mapFit";
-import { addTilesUnavailableNotice } from "../lib/mapNotice";
 import { choosePin } from "../lib/chargerNetwork";
 import "leaflet/dist/leaflet.css";
 import {
   valhallaBase,
   ensureConfig,
-  tilesPMTilesURL,
 } from "../lib/config";
-import { leafletLayer, paintRules, labelRules } from "protomaps-leaflet";
-import { namedFlavor, type Flavor as PMFlavor } from "@protomaps/basemaps";
 import { appMapFlavor, onAppMapFlavor, type MapFlavor } from "../lib/mapTheme";
+import { addOSMTiles, applyOSMTheme } from "../lib/osmTiles";
 import { findNearestCharger, type POI } from "../lib/poi";
 import { MAP_CAPTION_PX } from "../lib/mapCaption";
 import { SPEED_BUCKETS, speedBucketIndex, usedSpeedBuckets } from "../lib/speedBuckets";
@@ -312,12 +309,6 @@ async function snapToRoads(
   return out.segments.length > 0 ? out : null;
 }
 
-// Vector attribution for the self-hosted Protomaps basemap. OSM is
-// the data source; Protomaps builds and hosts the daily planet
-// extracts we slice from at build time.
-const PROTOMAPS_ATTRIB =
-  '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · <a href="https://protomaps.com">Protomaps</a>';
-
 // Friendly labels for the OSM `socket:*` keys we care about. Keys
 // not in this map fall through to a tidied-up version of the raw
 // tag (underscores → spaces, title-cased).
@@ -430,12 +421,9 @@ function chargerSpecListHTML(poi: POI): string {
   );
 }
 
-// Basemap flavor. @protomaps/basemaps ships four named flavors
-// (dark / light / black / white) but black is a marginal variant of
-// dark and white of light, so we expose just dark and light. The
-// default is the resolved app theme (lib/mapTheme.ts), live. The D/L
-// buttons are a temporary override for this map view only: held in the
-// map's closure, never persisted, so the next map opens in the theme.
+// The OSM tiles follow the app theme by default. The D/L buttons are
+// a temporary override for this map view only: held in the map's
+// closure, never persisted, so the next map opens in the app theme.
 type Flavor = MapFlavor;
 const FLAVORS: Flavor[] = ["dark", "light"];
 
@@ -495,110 +483,16 @@ function flavorControl(
   return { refresh };
 }
 
-// boostContrast returns a copy of a named protomaps flavor with
-// building / POI / landuse colors lifted so they actually read
-// against the earth color at street zoom. The shipped named
-// flavors are tuned for "minimal" cartography -- DARK puts
-// buildings at #111 over an earth of #1f1f1f at 50% opacity,
-// which composites to roughly the same gray and erases building
-// footprints visually. Same story in LIGHT (buildings = #ccc on
-// earth = #e2dfda) and BLACK / WHITE.
-//
-// We only override fields where the shipped value visually
-// merges with earth; other fields (roads, water, labels) are
-// left untouched so the overall theme still feels right.
-function boostContrast(name: Flavor, base: PMFlavor): PMFlavor {
-  switch (name) {
-    case "dark":
-      return {
-        ...base,
-        // Buildings need to be clearly above earth (#1f1f1f).
-        // #555 at 0.5 opacity composites to ~#3a -- visible but
-        // not loud.
-        buildings: "#555555",
-        // Parks / wood / pedestrian areas: lift the green tint
-        // so a city park reads as "this is a park," not "this
-        // is slightly different gray."
-        park_a: "#1d3527",
-        park_b: "#1d3527",
-        wood_a: "#1d2d24",
-        wood_b: "#1d2d24",
-        pedestrian: "#2a2a2a",
-        // Industrial / commercial / school landuse: subtle
-        // warm-gray so big-box parking lots stop looking like
-        // empty earth.
-        industrial: "#2c2a26",
-        school: "#2c2828",
-        hospital: "#2c2828",
-      };
-    case "light":
-      return {
-        ...base,
-        // LIGHT ships buildings = #cccccc over earth = #e2dfda
-        // at 0.5 opacity -- fully invisible. Drop to a clearly
-        // darker tone.
-        buildings: "#a8a8a8",
-        park_a: "#cfe5cf",
-        park_b: "#cfe5cf",
-        pedestrian: "#dad7d2",
-      };
-  }
-}
-
-// addBasemap draws the self-hosted PMTiles vector layer when the tile
-// server is wired via /api/config; otherwise it shows a "tiles
-// unavailable" notice on a plain background (no third-party raster
-// host). The vector path renders labels inline with the basemap; the
-// route polyline draws on top.
-//
-// When the vector path is active, the layer is swapped when the app
-// theme flips or the D/L override is used. Observers are removed on map
-// unload.
+// Theme-filter the public OSM raster tiles while preserving this map's
+// temporary D/L picker and the app-theme follow behavior.
 function addBasemap(map: L.Map) {
-  const url = tilesPMTilesURL();
-  if (!url) {
-    addTilesUnavailableNotice(map);
-    return;
-  }
-  // protomaps-leaflet's leafletLayer returns its own LeafletLayer
-  // class which extends L.GridLayer at runtime but isn't typed as
-  // a Leaflet Layer in the published .d.ts. Cast at the boundary.
-  //
-  // We don't pass `flavor: f` directly: protomaps-leaflet's named
-  // flavors (especially `dark` and `light`) ship with building /
-  // POI / landuse colors so close to the earth color that
-  // buildings effectively disappear at street zoom. We compute
-  // paintRules/labelRules ourselves from a contrast-boosted copy
-  // of the named flavor so building footprints, parks, and
-  // service-area landuse all read clearly at z16+.
-  const mkLayer = (f: Flavor) => {
-    const base = namedFlavor(f);
-    const boosted = boostContrast(f, base);
-    return leafletLayer({
-      url,
-      paintRules: paintRules(boosted),
-      labelRules: labelRules(boosted, "en"),
-      backgroundColor: boosted.background,
-      attribution: PROTOMAPS_ATTRIB,
-    }) as unknown as L.Layer;
-  };
-  // The container's own background shows until tiles paint; leaflet.css
-  // (unlayered) beats our themed rule, so set it per flavor here.
-  const paintBg = (f: Flavor) => {
-    map.getContainer().style.background = boostContrast(f, namedFlavor(f)).background;
-  };
+  addOSMTiles(map);
   let shown: Flavor = appMapFlavor();
-  let current = mkLayer(shown);
-  current.addTo(map);
-  paintBg(shown);
+  applyOSMTheme(map, shown);
   const show = (next: Flavor) => {
     if (next === shown) return;
     shown = next;
-    paintBg(next);
-    const replacement = mkLayer(next);
-    replacement.addTo(map);
-    map.removeLayer(current);
-    current = replacement;
+    applyOSMTheme(map, next);
   };
   const ctl = flavorControl(map, shown, (f) => {
     show(f);

@@ -18,9 +18,8 @@
 //
 // Both archives are reached through the rivolt API's same-origin
 // /api/maps/tiles proxy, so authn is automatic via the session
-// cookie. PMTiles + @mapbox/vector-tile are already in the SPA
-// bundle as transitive deps of protomaps-leaflet, so reading the
-// raw tile bytes costs nothing extra at runtime.
+// cookie. PMTiles, Pbf and VectorTile are direct SPA dependencies
+// used to read these raw POI tile bytes.
 
 import { inDemo } from "./demo";
 import { PbfReader } from "pbf";
