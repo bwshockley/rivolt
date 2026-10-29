@@ -1706,7 +1706,9 @@ func New(d Deps) http.Handler {
 //     Rivian on every page load is acceptable because the user has
 //     already authenticated to Rivian for telemetry — we're not
 //     widening the surface, just rendering an asset they already
-//     associated with their account.
+//     associated with their account. OpenStreetMap's standard tile host
+//     is allowed for the Leaflet basemap; tile requests disclose the
+//     visitor's IP and approximate map area to that service.
 //     frame-ancestors 'none' prevents clickjacking; the SPA never
 //     embeds in an iframe.
 //     No third-party script or connect origins are allowed: Rivolt
@@ -1729,7 +1731,7 @@ func securityHeaders(next http.Handler) http.Handler {
 	const csp = "default-src 'self'; " +
 		"script-src 'self'; " +
 		"style-src 'self' 'unsafe-inline'; " +
-		"img-src 'self' data: blob: https://rivian.com https://*.rivian.com; " +
+		"img-src 'self' data: blob: https://rivian.com https://*.rivian.com https://tile.openstreetmap.org; " +
 		"font-src 'self' data:; " +
 		"connect-src 'self'; " +
 		"worker-src 'self'; " +
