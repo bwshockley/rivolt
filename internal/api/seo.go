@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/apohor/rivolt/internal/dcfcrates"
+	"github.com/apohor/rivolt/internal/iosapp"
 )
 
 // Public-page metadata for crawlers and link unfurlers. The app is a
@@ -28,6 +29,8 @@ const (
 	pathLeaseCalc   = "/lease-calculator"
 	pathChangelog   = "/changelog"
 	pathChargeCost  = "/charging-cost"
+	pathR2Guide     = "/r2"
+	pathNetworks    = "/charging-networks"
 )
 
 const (
@@ -56,12 +59,12 @@ var seoPages = map[string]map[string]seoPage{
 		},
 		"/terms": {
 			title:   "Terms of service | Rivolt",
-			desc:    "The terms for using Rivolt, a free, open-source companion for Rivian owners run by an individual. " + notAffiliated,
+			desc:    "The terms for using Rivolt, a free, open-source companion for Rivian owners run by ZeroDowntime LLC. " + notAffiliated,
 			summary: "Rivolt terms of service. " + notAffiliated,
 		},
 		pathLeaseCalc: {
 			title: "Rivian lease mileage calculator | Rivolt",
-			desc:  "Free lease mileage calculator: see if you're on pace for your allowance and what overage could cost. Runs in your browser. " + notAffiliated,
+			desc:  "Free lease mileage calculator: on pace for your allowance, and what could overage cost? Runs in your browser. " + notAffiliated,
 			summary: "A free lease mileage calculator that runs in your browser. Enter your lease dates, allowance and odometer to see miles used, whether you are on pace, " +
 				"projected miles and overage at lease return, and the miles a day that keep you within the allowance. Nothing you type is sent or stored. " + notAffiliated,
 		},
@@ -77,13 +80,25 @@ var seoPages = map[string]map[string]seoPage{
 		},
 		pathSafeConnect: {
 			title: "Is it safe to connect my Rivian account to Rivolt?",
-			desc:  "What Rivolt keeps, what it does, how to undo it, and why a separate Authorized Driver account is the safest way to connect. " + notAffiliated,
+			desc:  "What Rivolt keeps, what it does, how to undo it, and why to connect a separate Authorized Driver account. " + notAffiliated,
 			summary: "Connect a separate Authorized Driver account if you can. Rivolt keeps your Rivian email and an encrypted session token, never your password. " +
 				"It is read-only and can't control your truck; sign out in Settings or remove the driver in the Rivian app to undo it. It is unofficial and can break. " + notAffiliated,
 		},
+		pathNetworks: {
+			title: "Rivian fast-charging networks: plans and typical prices",
+			desc:  "Membership plans as Electrify America, EVgo, Tesla, Shell Recharge and Rivian state them, with the date checked, and typical prices a tracker lists.",
+			summary: "Fast-charging network membership plans as each operator states them, with the date we last checked, and typical observed prices per kWh where a " +
+				"third-party tracker publishes them, with the month. Prices are per site and the price at the charger may differ. " + notAffiliated,
+		},
+		pathR2Guide: {
+			title: "Your first week with an R2 in Rivolt",
+			desc:  "Connecting an R2: what is recorded on the first R2s, what is unconfirmed, and how to report what looks wrong. " + notAffiliated,
+			summary: "A first-week guide for Rivian R2 owners: connect an Authorized Driver account, what Rivolt records on the first R2s (drives, charges, battery, " +
+				"range, location, temperatures, tire pressure, sleep state), what is not shown for an R2 yet, and how to report what looks wrong. " + notAffiliated,
+		},
 		pathSupport: {
 			title:   "Rivolt support",
-			desc:    "Help for Rivolt, the unofficial open-source companion for Rivian owners: how to connect, export or delete your data, what it does and doesn't do, and how to reach us.",
+			desc:    "Help for Rivolt, the unofficial open-source companion for Rivian owners: how to connect, export or delete your data, what it does, and how to reach us.",
 			summary: "Rivolt support: email support@rivolt.dev or open an issue on GitHub; answers on connecting, exporting and deleting your data. " + notAffiliated,
 		},
 		pathChangelog: {
@@ -101,9 +116,8 @@ var seoPages = map[string]map[string]seoPage{
 	},
 	hostDemo: {
 		"/": {
-			title: "Rivolt demo: a sample Rivian truck with generated data",
-			desc: "Browse Rivolt's Now, Activity, Money, Plan and Truck tabs on a generated sample truck. No sign-in, no Rivian account, sample data only. " +
-				notAffiliated,
+			title:   "Rivolt demo: a sample Rivian truck with generated data",
+			desc:    "Browse Now, Activity, Money, Plan and Truck on a sample truck with generated data. No sign-in, no Rivian account. " + notAffiliated,
 			summary: "This is the Rivolt demo: a generated sample truck with made-up numbers, no sign-in and no Rivian account. " + notAffiliated,
 		},
 		"/privacy": {
@@ -113,7 +127,7 @@ var seoPages = map[string]map[string]seoPage{
 		},
 		"/terms": {
 			title:   "Terms of service | Rivolt",
-			desc:    "The terms for using Rivolt, a free, open-source companion for Rivian owners run by an individual. " + notAffiliated,
+			desc:    "The terms for using Rivolt, a free, open-source companion for Rivian owners run by ZeroDowntime LLC. " + notAffiliated,
 			summary: "Rivolt terms of service. " + notAffiliated,
 		},
 	},
@@ -168,7 +182,7 @@ func llmsTxt(host string) (string, bool) {
 	var b strings.Builder
 	b.WriteString("# Rivolt\n\n> " + home.desc + "\n\n")
 	b.WriteString("Rivolt records a Rivian's drives and charges, prices charging at the owner's own rate, shows efficiency, and projects lease miles. ")
-	b.WriteString("It is free, open source (MIT) and run by an individual.\n\n## Pages\n\n")
+	b.WriteString("It is free, open source (MIT) and run by ZeroDowntime LLC.\n\n## Pages\n\n")
 	b.WriteString("- [Home](" + base + "/): what Rivolt does\n")
 	if host == hostApp {
 		b.WriteString("- [Demo](https://" + hostDemo + "/): a generated sample truck, no sign-in\n")
@@ -183,6 +197,12 @@ func llmsTxt(host string) (string, bool) {
 	}
 	if _, ok := pages[pathChargeCost]; ok {
 		b.WriteString("- [How much does it cost to charge a Rivian at home?](" + base + pathChargeCost + "): a worked example and a free calculator\n")
+	}
+	if _, ok := pages[pathNetworks]; ok {
+		b.WriteString("- [Fast-charging networks: plans and typical prices](" + base + pathNetworks + "): plans as each operator states them, with the date checked\n")
+	}
+	if _, ok := pages[pathR2Guide]; ok {
+		b.WriteString("- [Your first week with an R2](" + base + pathR2Guide + "): what is recorded on the first R2s and what is not yet\n")
 	}
 	if _, ok := pages[pathSafeConnect]; ok {
 		b.WriteString("- [Is it safe to connect my Rivian account?](" + base + pathSafeConnect + "): what is kept and how to undo it\n")
@@ -335,7 +355,7 @@ func sitemapXML(host string) (string, bool) {
 	}
 	var b strings.Builder
 	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n" + `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">` + "\n")
-	for _, p := range append([]string{"/", "/privacy", "/terms", pathSupport, pathLeaseCalc, pathChargeCost, pathSafeConnect, pathElectraFi, pathChangelog}, sampleTripPaths()...) {
+	for _, p := range append([]string{"/", "/privacy", "/terms", pathSupport, pathLeaseCalc, pathChargeCost, pathNetworks, pathR2Guide, pathSafeConnect, pathElectraFi, pathChangelog}, sampleTripPaths()...) {
 		if _, ok := pages[p]; ok {
 			b.WriteString("  <url><loc>https://" + host + p + "</loc></url>\n")
 		}
@@ -380,6 +400,11 @@ func injectSEO(shell []byte, host string, page seoPage, canon string) []byte {
 		if el := chargingCostPrice(host, seoNow()); el != "" {
 			extra += "    " + el + "\n"
 		}
+	}
+	// Smart App Banner: only for an App Store link with an app id (the server must emit it;
+	// a tag added by script is unreliable on Safari). TestFlight links get none.
+	if id := iosapp.AppStoreID(iosapp.URL()); id != "" {
+		extra += `    <meta name="apple-itunes-app" content="app-id=` + e(id) + `" />` + "\n"
 	}
 	rep(reHeadClose, `<link rel="canonical" href="`+e(url)+`" />`+"\n"+
 		`    <meta property="og:url" content="`+e(url)+`" />`+"\n"+extra+"  </head>")
