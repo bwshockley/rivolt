@@ -1,5 +1,11 @@
 import type { DriveVideo } from "./api";
 
+const roadCamFilenamePattern = /^\d{2}_\d{2}_\d{2}_\d{6}_(frontCenter|rearCenter|sideLeft|sideRight)_\d{3}\.mp4$/;
+
+export function isRoadCamFilename(filename: string): boolean {
+  return roadCamFilenamePattern.test(filename);
+}
+
 export type DriveVideoSegment = {
   video: DriveVideo;
   startMs: number | null;

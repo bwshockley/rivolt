@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDriveVideoSegments, driveVideoSegmentAt } from "./driveVideoSync";
+import { buildDriveVideoSegments, driveVideoSegmentAt, isRoadCamFilename } from "./driveVideoSync";
 import type { DriveVideo } from "./api";
 
 function clip(id: string, sequence: number): DriveVideo {
@@ -15,6 +15,12 @@ function clip(id: string, sequence: number): DriveVideo {
 }
 
 describe("drive video synchronization", () => {
+  it("accepts only the supported Road Cam filename and camera tokens", () => {
+    expect(isRoadCamFilename("10_30_26_073907_frontCenter_001.mp4")).toBe(true);
+    expect(isRoadCamFilename("10_30_26_073907_fontCenter_001.mp4")).toBe(false);
+    expect(isRoadCamFilename("2097.mp4")).toBe(false);
+  });
+
   it("places later clips after the previous clip duration", () => {
     const segments = buildDriveVideoSegments([clip("one", 1), clip("two", 2)], { one: 60, two: 45 });
     expect(segments.map(({ startMs, endMs }) => [startMs, endMs])).toEqual([

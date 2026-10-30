@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { backend, type Drive, type DriveVideo } from "../lib/api";
-import { buildDriveVideoSegments, driveVideoSegmentAt } from "../lib/driveVideoSync";
+import { buildDriveVideoSegments, driveVideoSegmentAt, isRoadCamFilename } from "../lib/driveVideoSync";
 import { displayTimeZone } from "../lib/format";
 import { Card } from "./ui";
 
@@ -118,6 +118,13 @@ export function DriveVideoPanel({
   async function uploadFiles(files: FileList | null) {
     if (!files?.length) return;
     const selected = Array.from(files);
+    const invalidFile = selected.find((file) => !isRoadCamFilename(file.name));
+    if (invalidFile) {
+      setProgress("");
+      setError(`${invalidFile.name}: use MM_DD_YY_HHMMSS_camera_NNN.mp4 with frontCenter, rearCenter, sideLeft, or sideRight.`);
+      if (fileInput.current) fileInput.current.value = "";
+      return;
+    }
     setBusy(true);
     setError("");
     const timezone = displayTimeZone() || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
