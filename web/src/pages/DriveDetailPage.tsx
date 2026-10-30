@@ -15,6 +15,7 @@ const DriveMap = lazy(() =>
 import { DriveTimeline } from "../components/DriveTimeline";
 import { ShareTripButton } from "../components/ShareButtons";
 import { EfficiencyExplainerCard } from "../components/EfficiencyExplainerCard";
+import { DriveVideoPanel } from "../components/DriveVideoPanel";
 import {
   formatDateTime,
   formatDuration,
@@ -594,6 +595,10 @@ export default function DriveDetailPage() {
           </Suspense>
         )}
       </Card>
+
+      {!demo ? (
+        <DriveVideoPanel drive={drive} cursorMs={cursorMs} onCursorChange={setCursorMs} />
+      ) : null}
 
       {samples.isError && !demo ? (
         <ErrorBox

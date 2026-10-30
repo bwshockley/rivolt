@@ -18,6 +18,7 @@ import (
 	"github.com/apohor/rivolt/internal/db"
 	"github.com/apohor/rivolt/internal/flags"
 	"github.com/apohor/rivolt/internal/idp"
+	"github.com/apohor/rivolt/internal/videos"
 	"github.com/apohor/rivolt/internal/rivian"
 	"github.com/apohor/rivolt/internal/secrets"
 	"github.com/go-chi/chi/v5"
@@ -302,7 +303,7 @@ func handleAdminUserSetRole(d *sql.DB) http.HandlerFunc {
 // can't sign in past the
 // EnsureUser bootstrap gate). The error is logged so the admin
 // can clean up via the script.
-func handleAdminUserDelete(d *sql.DB, ac idp.UserProvider, apple *AppleRevocation, purge func(context.Context, uuid.UUID), log *slog.Logger) http.HandlerFunc {
+func handleAdminUserDelete(d *sql.DB, ac idp.UserProvider, apple *AppleRevocation, purge func(context.Context, uuid.UUID), videoStore *videos.Store, log *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if d == nil {
 			writeJSON(w, http.StatusServiceUnavailable, map[string]any{"error": "db unavailable"})
@@ -361,6 +362,11 @@ func handleAdminUserDelete(d *sql.DB, ac idp.UserProvider, apple *AppleRevocatio
 		if err := db.DeleteUserAccount(delCtx, d, target); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
 			return
+		}
+		if videoStore != nil {
+			if err := videoStore.RemoveUserFiles(target); err != nil && log != nil {
+				log.Error("admin delete: remove stored videos", "err", err.Error())
+			}
 		}
 		if purge != nil {
 			purge(delCtx, target)

@@ -87,6 +87,7 @@ import (
 	"github.com/apohor/rivolt/internal/syntheticplan"
 	"github.com/apohor/rivolt/internal/tracing"
 	"github.com/apohor/rivolt/internal/trips"
+	"github.com/apohor/rivolt/internal/videos"
 	"github.com/apohor/rivolt/internal/weather"
 	"github.com/apohor/rivolt/internal/web"
 
@@ -2676,6 +2677,19 @@ func runServer() {
 			Observe:    api.NewForgetObserver(appMetrics),
 		}
 	}
+	videoQuotaGiB := int64(100)
+	if value := strings.TrimSpace(os.Getenv("RIVOLT_VIDEO_QUOTA_GIB")); value != "" {
+		parsed, err := strconv.ParseInt(value, 10, 64)
+		if err != nil || parsed < 0 || parsed > 1<<20 {
+			logger.Warn("invalid RIVOLT_VIDEO_QUOTA_GIB; using default", "value", value, "default_gib", videoQuotaGiB)
+		} else {
+			videoQuotaGiB = parsed
+		}
+	}
+	var videoStore *videos.Store
+	if requestDB != nil {
+		videoStore = videos.NewStore(requestDB, filepath.Join(*dataDir, "videos"), videoQuotaGiB<<30)
+	}
 	handler := api.New(api.Deps{
 		AuditKey:              deriveKey(cookieSecret, "rivolt/audit/v1"),
 		Sessions:              sessionsAPI,
@@ -2694,6 +2708,7 @@ func runServer() {
 		SystemSettings:        settingsFactory, // the sweeps started in api.New (statement and weekly emails) run with no user in context
 		Push:                  reqStores.Push,
 		Trips:                 reqStores.Trips,
+		Videos:                videoStore,
 		PackHealth:            reqStores.PackHealth, // request pool: per-vehicle samples reached through the vehicle's owner (the monitor's own store stays on the system pool)
 		Monitors:              monitorRegistry,
 		SettingsMgr:           settingsMgr,

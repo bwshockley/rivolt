@@ -101,6 +101,8 @@ speed, SoC, elevation, temperature, headwind and precipitation, and
 weather context for the drive's start hour from Open-Meteo when
 enabled. A "Low GPS accuracy" pill appears when the modem returned
 stale fixes or implausible jumps; its thresholds are admin-tunable.
+Road Cam clips can also be uploaded per drive and synchronized with the
+timeline and route; see the [NAS storage and permissions guide](docs/ROAD_CAM_VIDEOS.md).
 
 **Charges.** Date, location, energy delivered, peak kW and cost. The
 detail page has the power curve, peak and average kW, session

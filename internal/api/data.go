@@ -1192,6 +1192,12 @@ func handleDataReset(d Deps) http.HandlerFunc {
 			http.Error(w, "reset drives: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+		if d.Videos != nil {
+			if err := d.Videos.DeleteUser(ctx, uid); err != nil {
+				http.Error(w, "reset video files: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
 		chargesN, err := cs.Reset(ctx)
 		if err != nil {
 			http.Error(w, "reset charges: "+err.Error(), http.StatusInternalServerError)
@@ -1281,6 +1287,11 @@ func handleDataAccountDelete(d Deps) http.HandlerFunc {
 		if err := db.DeleteUserAccount(delCtx, d.sysDB(), uid); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": err.Error()})
 			return
+		}
+		if d.Videos != nil {
+			if err := d.Videos.RemoveUserFiles(uid); err != nil && d.Logger != nil {
+				d.Logger.Error("self-delete: remove stored videos", "err", err.Error())
+			}
 		}
 		if d.PurgeUserCaches != nil {
 			d.PurgeUserCaches(delCtx, uid)

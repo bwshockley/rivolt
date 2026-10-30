@@ -15,6 +15,8 @@ services:
     environment:
       ADDR: ":8080"
       DATA_DIR: "/data"
+      # Per-user Road Cam storage cap in GiB (0 disables the cap).
+      RIVOLT_VIDEO_QUOTA_GIB: "${RIVOLT_VIDEO_QUOTA_GIB:-100}"
       # Optional AI hooks (future analysis features). Set exactly one
       # key; if multiple are set, openai wins unless AI_PROVIDER selects
       # otherwise.

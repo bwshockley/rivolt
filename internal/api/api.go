@@ -57,6 +57,7 @@ import (
 	"github.com/apohor/rivolt/internal/signuprequests"
 	"github.com/apohor/rivolt/internal/statement"
 	"github.com/apohor/rivolt/internal/trips"
+	"github.com/apohor/rivolt/internal/videos"
 	"github.com/apohor/rivolt/internal/weather"
 )
 
@@ -116,6 +117,7 @@ type Deps struct {
 	// see stores scoped to the caller. nil-safe: handlers gate on
 	// the resolved *Store being non-nil before reading.
 	Drives   *drives.Factory
+	Videos   *videos.Store
 	Charges  *charges.Factory
 	Samples  *samples.Factory
 	Settings *settings.Factory
@@ -1322,7 +1324,7 @@ func New(d Deps) http.Handler {
 				r.With(audit(auditSpec{action: "user.refresh_rivian_session", targetType: "user", idParam: "id", userTarget: true})).
 					Post("/users/{id}/refresh-rivian-session", handleAdminUserRefreshRivianSession(d.Accounts, d.systemSecrets(), d.SystemDB, d.Logger)) // system pool: another user's secrets
 				r.With(audit(auditSpec{action: "user.delete", targetType: "user", idParam: "id", userTarget: true})).
-					Delete("/users/{id}", handleAdminUserDelete(d.SystemDB, d.Users, d.AppleRevocation, d.PurgeUserCaches, d.Logger))
+					Delete("/users/{id}", handleAdminUserDelete(d.SystemDB, d.Users, d.AppleRevocation, d.PurgeUserCaches, d.Videos, d.Logger))
 				r.Get("/settings/ai", handleAISettingsGet(d.SettingsMgr))
 				r.With(audit(auditSpec{action: "settings.ai", targetType: "settings", targetID: "ai", fields: true})).
 					Put("/settings/ai", handleAISettingsPut(d.SettingsMgr))
@@ -1663,6 +1665,24 @@ func New(d Deps) http.Handler {
 			r.Post("/data/restore", handleDataRestore(d))
 			r.Delete("/data/sessions", handleDataReset(d))
 			r.Delete("/data/account", handleDataAccountDelete(d))
+
+			// Road Cam files can approach 1 GiB each. Keep these routes out of
+			// the normal 30-second/JSON-limited group and authenticate them
+			// like the other per-user drive data.
+			if d.Videos != nil {
+				r.Get("/drives/{id}/videos", withUser(func(uid uuid.UUID, w http.ResponseWriter, r *http.Request) {
+					handleDriveVideosList(d.Videos, uid)(w, r)
+				}))
+				r.Post("/drives/{id}/videos", withUser(func(uid uuid.UUID, w http.ResponseWriter, r *http.Request) {
+					handleDriveVideoUpload(d.Videos, uid)(w, r)
+				}))
+				r.Get("/drives/{id}/videos/{videoID}/content", withUser(func(uid uuid.UUID, w http.ResponseWriter, r *http.Request) {
+					handleDriveVideoContent(d.Videos, uid)(w, r)
+				}))
+				r.Delete("/drives/{id}/videos/{videoID}", withUser(func(uid uuid.UUID, w http.ResponseWriter, r *http.Request) {
+					handleDriveVideoDelete(d.Videos, uid)(w, r)
+				}))
+			}
 		}) // end of bulk-data authenticated /api group
 	})
 

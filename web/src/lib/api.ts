@@ -73,7 +73,8 @@ async function request<T>(
   // is inert for anyone who isn't a confirmed admin caller — the
   // server ignores it outright for non-admins.
   const headers: Record<string, string> = {};
-  if (body !== undefined) headers["Content-Type"] = "application/json";
+  const multipart = typeof FormData !== "undefined" && body instanceof FormData;
+  if (body !== undefined && !multipart) headers["Content-Type"] = "application/json";
   // Never impersonate on the login page. Its whole job is to bootstrap
   // the REAL session (poll /api/auth/me, list OIDC providers); if it
   // carried the header, /api/auth/me would resolve as the impersonated
@@ -85,7 +86,7 @@ async function request<T>(
   const res = await fetch(url, {
     method,
     headers: Object.keys(headers).length > 0 ? headers : undefined,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: body !== undefined ? (multipart ? body : JSON.stringify(body)) : undefined,
     signal,
   });
   const text = await res.text();
@@ -378,6 +379,16 @@ export type Drive = {
   // Set by collapseRoundTrips on a row it merged: how many recorded drives
   // it holds. Counts (Now, Money, the API) are of recorded drives.
   round_trip_legs?: number;
+};
+
+export type DriveVideo = {
+  id: string;
+  camera: "frontCenter" | "rearCenter" | "sideLeft" | "sideRight";
+  sequence: number;
+  filename: string;
+  recorded_at: string;
+  size_bytes: number;
+  uploaded_at: string;
 };
 
 // PackHealthSample is one derived effective-pack-capacity reading
@@ -1694,6 +1705,14 @@ export const backend = {
   allDrives: (o: { slim?: boolean } = {}) => api.get<Drive[]>(`/api/drives?limit=5000${o.slim ? "&slim=1" : ""}`),
   // One drive with its route polyline and cost estimate. 404 for an unknown id or someone else's drive.
   drive: (id: string) => api.get<Drive>(`/api/drives/${encodeURIComponent(id)}`),
+  driveVideos: (id: string) =>
+    api.get<DriveVideo[]>(`/api/drives/${encodeURIComponent(id)}/videos`),
+  uploadDriveVideo: (id: string, form: FormData) =>
+    request<DriveVideo>("POST", `/api/drives/${encodeURIComponent(id)}/videos`, form),
+  deleteDriveVideo: (id: string, videoID: string) =>
+    api.del<void>(`/api/drives/${encodeURIComponent(id)}/videos/${encodeURIComponent(videoID)}`),
+  driveVideoURL: (id: string, videoID: string) =>
+    `/api/drives/${encodeURIComponent(id)}/videos/${encodeURIComponent(videoID)}/content`,
   // The user's own correction of whether a trailer was connected on a drive: true, false, or null to go back to what the truck reported.
   driveTrailer: (id: string, trailer: boolean | null) =>
     api.patch<{ trailer_override: boolean | null }>(`/api/drives/${encodeURIComponent(id)}/trailer`, { trailer }),

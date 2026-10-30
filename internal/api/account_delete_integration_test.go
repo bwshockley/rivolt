@@ -93,7 +93,7 @@ func TestAccountDelete_PurgesSignupRequestsAndRecordsIdPFailures(t *testing.T) {
 	provider := &flakyIdP{failing: true}
 	r := chi.NewRouter()
 	var purged []uuid.UUID
-	r.Delete("/users/{id}", handleAdminUserDelete(pool, provider, nil, func(_ context.Context, uid uuid.UUID) { purged = append(purged, uid) }, nil))
+	r.Delete("/users/{id}", handleAdminUserDelete(pool, provider, nil, func(_ context.Context, uid uuid.UUID) { purged = append(purged, uid) }, nil, nil))
 	r.Get("/idp-delete-failures", handleAdminIdPFailures(pool))
 	r.Post("/idp-delete-failures/{id}/retry", handleAdminIdPFailureRetry(pool, provider, nil))
 	do := func(method, path string) *httptest.ResponseRecorder {
